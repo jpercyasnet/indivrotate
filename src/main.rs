@@ -12,21 +12,14 @@ use iced::{Color, Command, Length, Settings};
 
 use serde::{Deserialize, Serialize};
 
-// use iced_futures::futures;
-// use futures::channel::mpsc;
 use std::process::Command as stdCommand;
-// use std::time::{Duration, Instant};
 use std::time::{Instant};
 use std::path::{Path};
 
-
 extern crate image as create_image;
 mod get_winsize;
-// mod dump_file;
 mod dirpressr;
 mod get_dirlistr;
-
-// mod get_dirlisti;
 
 mod listpressi;
 mod nextpressi;
@@ -36,8 +29,6 @@ use listpressi::listpressi;
 use nextpressi::nextpressi;
 use firstpressi::firstpressi;
 use rotatepressi::rotatepressi;
-// use get_dirlisti::get_dirlisti;
-// use dirpressy::dirpressx;
 
 use get_dirlistr::get_dirlistr;
 use get_winsize::get_winsize;
@@ -48,8 +39,8 @@ pub fn main() -> iced::Result {
      let mut heightxx: u32 = 750;
      let (errcode, errstring, widtho, heighto) = get_winsize();
      if errcode == 0 {
-         widthxx = widtho;
-         heightxx = heighto;
+         widthxx = widtho - 20;
+         heightxx = heighto - 75;
          println!("{}", errstring);
      } else {
          println!("**ERROR {} get_winsize: {}", errcode, errstring);
@@ -80,8 +71,7 @@ struct State {
     from_value: String,
     to_value: String,
     size_value: String,
-//    tx_send: mpsc::UnboundedSender<String>,
-//    rx_receive: mpsc::UnboundedReceiver<String>,
+    screenwidth: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -108,9 +98,16 @@ impl Application for ImageList {
     type Flags = ();
 
     fn new(_flags: ()) -> (ImageList, Command<Message>) {
+        let mut widthxx: u32 = 1300;
+        let (errcode, errstring, widtho, _heighto) = get_winsize();
+        if errcode == 0 {
+            widthxx = widtho;
+            println!("{}", errstring);
+        } else {
+         println!("**ERROR {} get_winsize: {}", errcode, errstring);
+        }
 
         (
-//            ImageList::Loaded(State::default()),
             ImageList::Loaded(State
                {
                 filter:Filter::All,
@@ -118,12 +115,10 @@ impl Application for ImageList {
                 dir_value: "no directory".to_string(),
                 mess_color: Color::from([0.0, 0.0, 0.0]),
                 msg_value: "no message".to_string(),
-//                scrol_value: " No directory selected \n ".to_string(),
                 from_value: "1".to_string(),
                 to_value: "16".to_string(),
                 size_value: "160".to_string(),
-//                tx_send,
-//                rx_receive,
+                screenwidth: widthxx as f32,
                 }
             ),
             Command::none(),
@@ -165,8 +160,9 @@ impl Application for ImageList {
                         Command::none()
                     } 
                     Message::ListPressed => {
-                       let (colorout, errstr, listitems, from_int1, _to_int1, newtoi, icon_int1) = listpressi(state.dir_value.clone(), state.from_value.clone(), state.to_value.clone(), state.size_value.clone());
-                       if newtoi != 0 {
+                       let (errcd, errstr, listitems, from_int1, _to_int1, newtoi, totfiles, icon_int1) = listpressi(state.dir_value.clone(), state.from_value.clone(), state.to_value.clone(), state.size_value.clone());
+                       if errcd == 0 {
+                           state.msg_value = format!("from: {}   to: {}  of {} images", from_int1, newtoi, totfiles);
                            state.images.clear();                         
                            for indexi in (from_int1 - 1)..newtoi {
                                 let fullpath = state.dir_value.clone() + "/" + &listitems[indexi as usize];
@@ -189,18 +185,19 @@ impl Application for ImageList {
 
                                 }
                             }
-                       }
-                       state.msg_value = errstr.to_string();
-                       state.mess_color = colorout;
+                            state.mess_color = Color::from([0.0, 1.0, 0.0]);          
+                       } else {
+                            state.msg_value = errstr.to_string();
+                            state.mess_color = Color::from([1.0, 0.0, 0.0]);
+                       };
                        Command::none()
                     }
                     Message::NextGroupPressed => {
-                       let (errcode, coloroutx, errstrx, fromstr, tostr) = nextpressi(state.dir_value.clone(), state.from_value.clone(), state.to_value.clone());
-                       let mut errcolor: Color = coloroutx;
-                       let mut errstring: String = errstrx.to_string();
+                       let (errcode, errstrx, fromstr, tostr) = nextpressi(state.dir_value.clone(), state.from_value.clone(), state.to_value.clone());
                        if errcode == 0 {
-                           let (colorout, errstr, listitems, from_int1, _to_int1, newtoi, icon_int1) = listpressi(state.dir_value.clone(), fromstr.clone(), tostr.clone(), state.size_value.clone());
-                           if newtoi != 0 {
+                           let (errcd, errstr, listitems, from_int1, _to_int1, newtoi, totfiles, icon_int1) = listpressi(state.dir_value.clone(), fromstr.clone(), tostr.clone(), state.size_value.clone());
+                           if errcd == 0 {
+                               state.msg_value = format!("from: {}   to: {}  of {} images", from_int1, newtoi, totfiles);
                                state.images.clear();                         
                                for indexi in (from_int1 - 1)..newtoi {
                                     let fullpath = state.dir_value.clone() + "/" + &listitems[indexi as usize];
@@ -221,24 +218,26 @@ impl Application for ImageList {
                                            .images
                                            .push(ImageItem::new(listitems[indexi as usize].clone(), rgbconv, newwidth, newheight));
                                     }
-                                }
-                                state.from_value = fromstr.to_string();
-                                state.to_value = tostr.to_string();
+                               }
+                               state.mess_color = Color::from([0.0, 1.0, 0.0]);          
+                               state.from_value = fromstr.to_string();
+                               state.to_value = tostr.to_string();
+                           } else {
+                               state.msg_value = errstr.to_string();
+                               state.mess_color = Color::from([1.0, 0.0, 0.0]);
                            }
-                           errcolor = colorout;
-                           errstring = errstr.to_string();
-                       }
-                       state.msg_value = errstring.to_string();
-                       state.mess_color = errcolor;
+                       } else {
+                          state.msg_value = errstrx.to_string();
+                          state.mess_color = Color::from([1.0, 0.0, 0.0]);
+                       };
                        Command::none()
                     }
                     Message::FirstGroupPressed => {
-                       let (errcode, coloroutx, errstrx, fromstr, tostr) = firstpressi(state.dir_value.clone(), state.from_value.clone(), state.to_value.clone());
-                       let mut errcolor: Color = coloroutx;
-                       let mut errstring: String = errstrx.to_string();
+                       let (errcode, errstrx, fromstr, tostr) = firstpressi(state.dir_value.clone(), state.from_value.clone(), state.to_value.clone());
                        if errcode == 0 {
-                           let (colorout, errstr, listitems, from_int1, _to_int1, newtoi, icon_int1) = listpressi(state.dir_value.clone(), fromstr.clone(), tostr.clone(), state.size_value.clone());
-                           if newtoi != 0 {
+                           let (errcd, errstr, listitems, from_int1, _to_int1, newtoi, totfiles, icon_int1) = listpressi(state.dir_value.clone(), fromstr.clone(), tostr.clone(), state.size_value.clone());
+                           if errcd == 0 {
+                               state.msg_value = format!("from: {}   to: {}  of {} images", from_int1, newtoi, totfiles);
                                state.images.clear();                         
                                for indexi in (from_int1 - 1)..newtoi {
                                     let fullpath = state.dir_value.clone() + "/" + &listitems[indexi as usize];
@@ -259,15 +258,18 @@ impl Application for ImageList {
                                            .images
                                            .push(ImageItem::new(listitems[indexi as usize].clone(), rgbconv, newwidth, newheight));
                                     }
-                                }
-                                state.from_value = fromstr.to_string();
-                                state.to_value = tostr.to_string();
+                               }
+                               state.mess_color = Color::from([0.0, 1.0, 0.0]);          
+                               state.from_value = fromstr.to_string();
+                               state.to_value = tostr.to_string();
+                           } else {
+                              state.msg_value = errstr.to_string();
+                              state.mess_color = Color::from([1.0, 0.0, 0.0]);
                            }
-                           errcolor = colorout;
-                           errstring = errstr.to_string();
-                       }
-                       state.msg_value = errstring.to_string();
-                       state.mess_color = errcolor;
+                       } else {
+                          state.msg_value = errstrx.to_string();
+                          state.mess_color = Color::from([1.0, 0.0, 0.0]);
+                       };
                        Command::none()
                     }
                     Message::RotateClockwisePressed => {
@@ -284,14 +286,14 @@ impl Application for ImageList {
                                     listofimages.push(imagesy.description.clone());
                                 }
                            }
-                           let (errcode, colorout, errstr) = rotatepressi(state.dir_value.clone(), listofimages.clone());
+                           let (errcode, errstr) = rotatepressi(state.dir_value.clone(), listofimages.clone());
                            if errcode == 0 {
                                state.msg_value = format!("{} images selected {}", images_left, listofimages[0]);
                                state.mess_color = Color::from([0.0, 1.0, 0.0]);
                                errfnd = 0;
                            } else {
                                state.msg_value = errstr.to_string();
-                               state.mess_color = colorout;
+                               state.mess_color = Color::from([1.0, 0.0, 0.0]);
                                errfnd = 2;
                            }
                        }
@@ -315,14 +317,14 @@ impl Application for ImageList {
                                     listofimages.push(imagesy.description.clone());
                                 }
                            }
-                           let (errcode, colorout, errstr) = rotatepressi(state.dir_value.clone(), listofimages.clone());
+                           let (errcode, errstr) = rotatepressi(state.dir_value.clone(), listofimages.clone());
                            if errcode == 0 {
                                state.msg_value = format!("{} images selected {}", images_left, listofimages[0]);
                                state.mess_color = Color::from([0.0, 1.0, 0.0]);
                                errfnd = 0;
                            } else {
                                state.msg_value = errstr.to_string();
-                               state.mess_color = colorout;
+                               state.mess_color = Color::from([1.0, 0.0, 0.0]);
                                errfnd = 2;
                            }
                        }
@@ -346,14 +348,14 @@ impl Application for ImageList {
                                     listofimages.push(imagesy.description.clone());
                                 }
                            }
-                           let (errcode, colorout, errstr) = rotatepressi(state.dir_value.clone(), listofimages.clone());
+                           let (errcode, errstr) = rotatepressi(state.dir_value.clone(), listofimages.clone());
                            if errcode == 0 {
                                state.msg_value = format!("{} images selected {}", images_left, listofimages[0]);
                                state.mess_color = Color::from([0.0, 1.0, 0.0]);
                                errfnd = 0;
                            } else {
                                state.msg_value = errstr.to_string();
-                               state.mess_color = colorout;
+                               state.mess_color = Color::from([1.0, 0.0, 0.0]);
                                errfnd = 2;
                            }
                        }
@@ -395,19 +397,13 @@ impl Application for ImageList {
                 from_value,
                 to_value,
                 size_value,
+                screenwidth,
                 ..
             }) => {
-                let title = text("List Images in a Directory")
-                    .width(Length::Fill)
-                    .size(20)
-                    .style(Color::from([0.5, 0.5, 0.5]))
-                    .horizontal_alignment(alignment::Horizontal::Center);
-
                 let mut messcol = Column::new().spacing(10);
                 messcol = messcol.push(container(row![text("Message:").size(30),
-                 text(msg_value).size(30).style(*mess_color),
-            ].align_items(Alignment::Center).spacing(10).padding(10)
-                    ));
+                 text(msg_value).size(30).style(*mess_color),].align_items(Alignment::Center).spacing(10).padding(10)
+                 ));
 
                 let mut dirbutshow = Column::new().spacing(10);
                 dirbutshow = dirbutshow.push(container(row![button("DirectoryButton").on_press(Message::DirPressed).style(theme::Button::Secondary),
@@ -444,6 +440,16 @@ impl Application for ImageList {
                 let mut imagescol3 = Column::new().spacing(10);
                 let mut imagescol4 = Column::new().spacing(10);
                 let mut imagescol5 = Column::new().spacing(10);
+                let mut imagescol6 = Column::new().spacing(10);
+                let mut imagescol7 = Column::new().spacing(10);
+                let mut numcol = 5;
+
+                let winwidth: f32 = screenwidth - 20.0;
+                if winwidth > 1800.0 {
+                     numcol = 7;
+                } else if winwidth > 1540.0 {
+                     numcol = 6;
+                }
                 let mut colpos = 0;
                 let mut n = 0;
                 if filtered_images.clone().count() == 0 {
@@ -482,10 +488,28 @@ impl Application for ImageList {
                                  imagescol5 = imagescol5.push(container(row![imagesy.view(n).map(move |message| {
                                     Message::ImageMessage(n, message)
                                    })]));
+                                 if numcol < 6 {
+                                     colpos = 0;
+                                 } else {
+                                     colpos = 5;
+                                 }
+                               } else if colpos == 5 {
+                                 imagescol6 = imagescol6.push(container(row![imagesy.view(n).map(move |message| {
+                                    Message::ImageMessage(n, message)
+                                   })]));
+                                 if numcol < 7 {
+                                     colpos = 0;
+                                 } else {
+                                     colpos = 6;
+                                 }
+                               } else if colpos == 6 {
+                                 imagescol7 = imagescol7.push(container(row![imagesy.view(n).map(move |message| {
+                                    Message::ImageMessage(n, message)
+                                   })]));
                                  colpos = 0;
                                }
                              }
-                         } else {
+                        } else {
                              if (filter == &Filter::All) || (filter == &Filter::Active) {
                                if colpos == 0 {
                                  imagescol1 = imagescol1.push(container(row![imagesy.view(n).map(move |message| {
@@ -511,6 +535,24 @@ impl Application for ImageList {
                                  imagescol5 = imagescol5.push(container(row![imagesy.view(n).map(move |message| {
                                     Message::ImageMessage(n, message)
                                    })]));
+                                 if numcol < 6 {
+                                     colpos = 0;
+                                 } else {
+                                     colpos = 5;
+                                 }
+                               } else if colpos == 5 {
+                                 imagescol6 = imagescol6.push(container(row![imagesy.view(n).map(move |message| {
+                                    Message::ImageMessage(n, message)
+                                   })]));
+                                 if numcol < 7 {
+                                     colpos = 0;
+                                 } else {
+                                     colpos = 6;
+                                 }
+                               } else if colpos == 6 {
+                                 imagescol7 = imagescol7.push(container(row![imagesy.view(n).map(move |message| {
+                                    Message::ImageMessage(n, message)
+                                   })]));
                                  colpos = 0;
                                }
                              }
@@ -528,11 +570,16 @@ impl Application for ImageList {
                            imagesrow = imagesrow.push(container(imagescol4).padding(10).width(Length::Fixed(250.0)));
                            if n > 4 {
                                imagesrow = imagesrow.push(container(imagescol5).padding(10).width(Length::Fixed(250.0)));
+                               if n > 5 && numcol > 5 {
+                                   imagesrow = imagesrow.push(container(imagescol6).padding(10).width(Length::Fixed(250.0)));
+                                   if n > 6 && numcol > 6 {
+                                       imagesrow = imagesrow.push(container(imagescol7).padding(10).width(Length::Fixed(250.0)));
+                                   }
+                               }
                            }
                        }
                     }
                 }
-
                 let scrollable_content: Element<Message> =
                   Element::from(scrollable(
                     imagesrow
@@ -542,15 +589,26 @@ impl Application for ImageList {
                     Properties::new()
                         .width(10)
                         .margin(10)
-                        .scroller_width(10),
+                        .scroller_width(winwidth),
                 )); 
 
-                column![title, messcol, dirbutshow, butcol, fromtosize, controls, scrollable_content]
-                    .spacing(20)
-                    .max_width(1300)
+                column![messcol, dirbutshow, butcol, fromtosize, controls, scrollable_content]
+                    .spacing(1)
+                    .max_width(winwidth)
                 .into()
             }
         }
+    }
+    fn theme(&self) -> Theme {
+//       Theme::Light
+          Theme::custom(theme::Palette {
+                        background: Color::from_rgb8(240, 240, 240),
+                        text: Color::BLACK,
+                        primary: Color::from_rgb8(230, 230, 230),
+                        success: Color::from_rgb(0.0, 1.0, 0.0),
+                        danger: Color::from_rgb(1.0, 0.0, 0.0),
+                    })
+               
     }
 }
 
