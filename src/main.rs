@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::process::Command as stdCommand;
 use std::time::{Instant};
 use std::path::{Path};
+use std::env;
 
 extern crate image as create_image;
 mod get_winsize;
@@ -98,6 +99,23 @@ impl Application for ImageList {
     type Flags = ();
 
     fn new(_flags: ()) -> (ImageList, Command<Message>) {
+        let mut parmdir = "no directory".to_string();
+        let mut msgclr = Color::from([0.0, 0.0, 0.0]);
+        let mut msgval = "no message".to_string();
+        let args: Vec<_> = env::args().collect();
+        if args.len() > 1 {
+            println!("The first argument is {}", args[1]);
+            if Path::new(&args[1]).exists() {
+                parmdir = args[1].to_string();
+                msgclr = Color::from([0.0, 1.0, 0.0]);
+                msgval = "got a existing item. Hopefully a directory".to_string();
+            } else {
+                msgclr = Color::from([1.0, 0.0, 0.0]);
+                msgval = format!("parameter directory of {} does not exist", args[1]);
+            }
+        } else {
+            println!(" no input parameters");
+        }
         let mut widthxx: u32 = 1300;
         let (errcode, errstring, widtho, _heighto) = get_winsize();
         if errcode == 0 {
@@ -112,9 +130,9 @@ impl Application for ImageList {
                {
                 filter:Filter::All,
                 images:Vec::<ImageItem>::new(),
-                dir_value: "no directory".to_string(),
-                mess_color: Color::from([0.0, 0.0, 0.0]),
-                msg_value: "no message".to_string(),
+                dir_value: parmdir.to_string(),
+                mess_color: msgclr,
+                msg_value: msgval.to_string(),
                 from_value: "1".to_string(),
                 to_value: "16".to_string(),
                 size_value: "160".to_string(),
@@ -150,12 +168,14 @@ impl Application for ImageList {
                         }
                     }
                     Message::DirPressed => {
-                        let (colorout, errstr, newdir, _listitems) = dirpressr();
-                        if errstr == "got directory" {
-                            state.dir_value = newdir.to_string();
-                        } 
+                        let (errcode, errstr, newdir, _listitems) = dirpressr();
                         state.msg_value = errstr.to_string();
-                        state.mess_color = colorout;
+                        if errcode == 0 {
+                            state.dir_value = newdir.to_string();
+                            state.mess_color = Color::from([0.0, 1.0, 0.0]);
+                        } else {
+                            state.mess_color = Color::from([1.0, 0.0, 0.0]);
+                        } 
 
                         Command::none()
                     } 
