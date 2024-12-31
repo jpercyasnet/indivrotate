@@ -9,4 +9,8 @@ because it is now called in photorot1080.
 Iced is still being developed so code may change over time.
 This program rotates the images you select.
 
-<img src="image/indivrotate.png" width="800px" />
+This calls gimp to do rotates, so need some script files (Gimpfiles folder)
+
+This program calls winitsize01 to get the smallest monitor size.
+
+<img src="image/indivrotate131.png" width="800px" />
