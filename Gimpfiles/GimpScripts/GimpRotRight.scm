@@ -1,0 +1,7 @@
+(define (Gimp-Rotate-Right filename)
+   (let* ((image (car (gimp-file-load RUN-NONINTERACTIVE filename filename)))
+          (drawable (car (gimp-image-get-active-layer image))))
+     (gimp-image-rotate image 0)
+     (set! drawable (car (gimp-image-get-active-layer image)))
+     (gimp-file-save RUN-NONINTERACTIVE image drawable filename filename)
+     (gimp-image-delete image)))
