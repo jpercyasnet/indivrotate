@@ -1,9 +1,7 @@
-extern crate exif;
-extern crate chrono;
 use std::path::Path;
 use crate::get_dirlistr;
-pub fn firstpressi (dir_value: String, fromtxt: String, totxt: String) -> (i32, String, String, String) {
-     let mut errcode: i32 = 0;
+pub fn firstpressi (dir_value: String, fromtxt: String, totxt: String) -> (u32, String, String, String) {
+     let mut errcode: u32 = 0;
      let mut errstring: String = " ".to_string();
      let mut from_int1 = 0;
      let mut to_int1 = 0;

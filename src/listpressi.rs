@@ -1,5 +1,3 @@
-extern crate exif;
-extern crate chrono;
 use std::path::Path;
 use crate::get_dirlistr;
 pub fn listpressi (dir_value: String, fromtxt: String, totxt: String, sizetxt: String) -> (u32, String, Vec<String>, i32, i32, i32, i32, u32) {

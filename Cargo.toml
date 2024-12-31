@@ -1,16 +1,12 @@
 [package]
-name = "indivrotate"
+name = "indivrotatec1310"
 version = "0.1.0"
-authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
+authors = ["jp <jpercyasnet@yahoo.com>"]
 edition = "2021"
 publish = false
 
 [dependencies]
-iced_futures = "^0"
-kamadak-exif = "^0"
-
 iced = { version = "^0", features = ["async-std", "image", "debug"] }
-serde = { version = "1.0", features = ["derive"] }
-rfd = { version = "^0", default-features = false, features = ["xdg-portal"]}
-chrono = "^0"
+serde = { version = "^0", features = ["derive"] }
+rfd = { version = "^0", features = ["xdg-portal"] }
 image = "^0"

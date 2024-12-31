@@ -37,13 +37,13 @@ use dirpressr::dirpressr;
 pub fn main() -> iced::Result {
      let mut widthxx: f32 = 1350.0;
      let mut heightxx: f32 = 750.0;
-     let (errcode, _errstring, widtho, heighto) = get_winsize();
+     let (errcode, errstring, widtho, heighto) = get_winsize();
      if errcode == 0 {
          widthxx = widtho as f32 - 20.0;
          heightxx = heighto as f32 - 75.0;
-//         println!("{}", errstring);
-//     } else {
-//         println!("**ERROR {} get_winsize: {}", errcode, errstring);
+         println!("{}", errstring);
+     } else {
+         println!("**ERROR {} get_winsize: {}", errcode, errstring);
      }
      iced::application(ImageList::title, ImageList::update, ImageList::view)
         .window_size((widthxx, heightxx))
@@ -94,11 +94,11 @@ enum Message {
 impl ImageList {
     fn new() -> (Self, Task<Message>) {
         let mut parmdir = "no directory".to_string();
-        let mut msgclr = Color::from([0.5, 0.5, 1.0]);
-        let mut msgval: String;
+        let mut msgclr = Color::from([0.0, 0.0, 1.0]);
+        let mut msgval = "no message".to_string();
         let args: Vec<_> = env::args().collect();
         if args.len() > 1 {
-//            println!("The first argument is {}", args[1]);
+            println!("The first argument is {}", args[1]);
             if Path::new(&args[1]).exists() {
                 parmdir = args[1].to_string();
                 msgclr = Color::from([0.0, 1.0, 0.0]);
@@ -108,15 +108,15 @@ impl ImageList {
                 msgval = format!("parameter directory of {} does not exist", args[1]);
             }
         } else {
-            msgval = format!(" no input parameters");
+            println!(" no input parameters");
         }
         let mut widthxx: u32 = 1300;
         let (errcode, errstring, widtho, _heighto) = get_winsize();
         if errcode == 0 {
             widthxx = widtho;
-            msgval = format!("{}  {}", msgval, errstring);
+            println!("{}", errstring);
         } else {
-            msgval = format!("{}   **ERROR {} get_winsize: {}", msgval, errcode, errstring);
+         println!("**ERROR {} get_winsize: {}", errcode, errstring);
         }
 
         (
@@ -765,7 +765,7 @@ fn empty_message(message: &str) -> Element<'_, Message> {
             .width(Length::Fill)
             .size(25)
             .align_x(Center)
-            .color([0.5, 0.5, 1.0]),
+            .color([0.7, 0.7, 0.7]),
     )
     .width(Length::Fill)
     .height(Length::Fixed(200.0))
@@ -782,7 +782,7 @@ impl Rotatex {
 
     async fn rotateit(dir_value: String, listofimages: Vec<String>, rottype: i32) -> Result<Rotatex, Error> {
      let mut errstring  = " ".to_string();
-     let mut colorx = Color::from([0.5, 0.5, 1.0]);
+     let mut colorx = Color::from([0.0, 0.0, 0.0]);
      let mut bolok = true;
      let mut rottypestr = " ".to_string();
      if rottype == 0 {
@@ -829,7 +829,7 @@ impl Rotatex {
      if bolok {
          let diffx = start_time.elapsed();     
          errstring = format!("rotated {} files in {} seconds", lenmg1, diffx.as_secs());
-         colorx = Color::from([0.0, 1.0, 0.0]);
+         colorx = Color::from([0.0, 0.0, 0.0]);
      }
      Ok(Rotatex {
             errcolor: colorx,

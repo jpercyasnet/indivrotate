@@ -1,4 +1,3 @@
-// extern crate exif;
 use std::fs;
 
 use std::path::{PathBuf};
